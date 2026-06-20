@@ -1,0 +1,433 @@
+import { test, expect, type Page, Locator } from '@playwright/test';
+
+enum CheckBoxState {
+    CHECKED = 'checked',
+    UNCHECKED = 'unchecked'
+}
+
+let page: Page;
+
+test('First Test', async ({ page: testPage }) => {
+
+    page = testPage;
+
+    await page.goto('https://automationcoursewebsite.onrender.com/');
+
+    await verify_Title_Text("Test page");
+
+    await verify_SeleniumAutomation_Text("Selenium automation");
+
+    //await Click_ThisIsALink_Link();
+
+    await verify_Logo_Image("big-logo.png");
+
+    await verify_ColoredText_Color("rgb(241, 50, 9)");
+
+    await verify_BackgroundedText_Color("rgb(176, 187, 7)");
+
+    //await click_Submit_Button();
+
+    //await click_Arrow_Button();
+
+    await verify_HiddenText_Text("Display none");
+
+    await verify_HiddenText_2_Text("Visibility hidden");
+
+    await setAttribute();
+
+    await select_CarsModels_DropDown("Mercedes");
+
+    //await select_Example_DropDown("youtube");
+
+    await click_Gender_RadioButton("Female");
+
+    await set_TextEditor_TextBox("Hello");
+
+    await set_LastName_TextBox("Dell");
+
+    await verify_LastName_TextBox("LastnameDell");
+
+    await verify_ReadOnlyField_TextBox("readonly");
+
+    await set_ReadOnlyField_TextBox("Hello");
+
+    await set_Text_AreaText("Hello");
+
+    await set_HaveBike_Checkbox(CheckBoxState.CHECKED);
+
+    await click_TabMenu_Tab("Seller");
+
+    await printTable();
+
+    await verify_UserClientIP_Text("Thomas Hardy", "192.168.1.100");
+
+    await verify_LoginServerIP_Text("John", "10.2.2.100");
+
+});
+
+async function verify_Title_Text(expectedText: string): Promise<void> {
+
+    const pageTitleLocator: Locator = await page.locator('h1#page_title_id');
+
+    const foundPageTitle: string = await pageTitleLocator.innerText();
+
+    if (foundPageTitle !== expectedText) {
+        throw new Error(`Found Page title: "${foundPageTitle}" Not equals to expected "${expectedText}"`);
+    }
+
+    /*if(foundPageTitle === expectedText){
+        console.log(`Found Page title: "${foundPageTitle}" equals to expected "${expectedText}"`);
+    }else{
+        throw new Error(`Found Page title: "${foundPageTitle}" Not equals to expected "${expectedText}"`);
+    }*/
+
+}
+
+async function verify_SeleniumAutomation_Text(expectedText: string): Promise<void> {
+
+    const pageLocator: Locator = await page.locator("//p[@name='free_text_name']");
+
+    const foundText: string = await pageLocator.innerText();
+
+    if (foundText !== expectedText) {
+        throw new Error(`Found Page title: "${foundText}" Not equals to expected "${expectedText}"`);
+    }
+}
+
+async function Click_ThisIsALink_Link(): Promise<void> {
+
+    await page.getByRole('link', { name: 'This is' }).click();
+}
+
+async function verify_Logo_Image(expectedImageName: string, expected: boolean = true): Promise<void> {
+
+    const imageAttr = await page.locator("#someimage_id").getAttribute("src");
+
+    if (expected) {
+        if (!imageAttr?.includes(expectedImageName)) {
+            throw new Error(`Logo image does not include expected src value "${expectedImageName}"`);
+        }
+    } else {
+        if (imageAttr?.includes(expectedImageName)) {
+            throw new Error(`Logo image does include expected src value "${expectedImageName}"`);
+        }
+    }
+}
+
+async function verify_ColoredText_Color(expectedColor: string): Promise<void> {
+
+    const textLocator = await page.locator("#colored_text_id");
+
+    const color = await textLocator.evaluate((element) => { return window.getComputedStyle(element).color });
+
+    await expect(textLocator).toHaveCSS('color', expectedColor);
+
+    /*if (!color?.includes(expectedColor)) {
+        throw new Error(`Text does not include style color value "${expectedColor}"`);
+    }*/
+}
+
+async function verify_BackgroundedText_Color(expectedColor: string): Promise<void> {
+
+    const textLocator = await page.locator("#background_colored_text_id");
+
+    //const color = await textLocator.evaluate((element) => { return window.getComputedStyle(element).backgroundColor });
+
+    await expect(textLocator).toHaveCSS('background-color', expectedColor);
+}
+
+async function click_Submit_Button(): Promise<void> {
+
+    await page.locator("//form/input[@id='submit_id']").click();
+
+}
+
+async function click_Arrow_Button(): Promise<void> {
+
+    await page.locator("#imagebutton_id").click();
+}
+
+async function verify_HiddenText_Text(expectedText: string): Promise<void> {
+
+    const foundText = await page.locator("#display_none_id").textContent();
+
+    if (!foundText?.includes(expectedText)) {
+        throw new Error(`Found text : "${foundText}" Not includes to expected "${expectedText}"`);
+    }
+}
+
+async function verify_HiddenText_2_Text(expectedText: string): Promise<void> {
+
+    const locator = await page.locator("#visibility_text_id");
+
+    await expect(locator).toHaveText(expectedText);
+}
+
+async function setAttribute(): Promise<void> {
+
+    const locator = await page.locator("#visibility_text_id");
+
+    await set_CSS_Value(locator, "visibility", "");
+
+    await set_CSS_Value(locator, "visibility", "hidden");
+
+    await set_Attribute_Value(locator, "style", "visibility: ;");
+
+    await set_Attribute_Value(locator, "style", "visibility: hidden;");
+}
+
+async function set_CSS_Value(element: Locator, styleName: string, styleValue: string): Promise<void> {
+
+    await element.evaluate(
+        (el, args) => {
+            const htmlElement = el as HTMLElement;
+            if (args.styleValue === '') {
+                htmlElement.style.removeProperty(args.styleName);
+            } else {
+                htmlElement.style.setProperty(args.styleName, args.styleValue);
+            }
+        }, { styleName, styleValue }
+    );
+}
+
+async function set_Attribute_Value(element: Locator, attributeName: string, attributeValue: string): Promise<void> {
+
+    await element.evaluate(
+        (el, args) => {
+            el.setAttribute(args.attributeName, args.attributeValue);
+        }, { attributeName, attributeValue }
+    );
+}
+
+async function select_CarsModels_DropDown(itemToSElect: string): Promise<void> {
+
+    const dropdown = await page.locator("#cars");
+
+    await dropdown.selectOption({ label: itemToSElect });
+
+}
+
+async function select_Example_DropDown(itemToSElect: string): Promise<void> {
+
+    await page.locator("//div[contains(@class,'dropdown')]/button[@data-toggle='dropdown']").click();
+
+    const dropdownMenu = page.locator("//div[contains(@class,'dropdown')]/ul[@class='dropdown-menu']")
+    dropdownMenu.waitFor({ state: 'visible', timeout: 2000 });
+    //await expect(dropdownMenu).toBeVisible({timeout: 2000});
+
+    const options = dropdownMenu.locator("li a");
+    const count = await options.count();
+
+    for (let i = 0; i < count; i++) {
+
+        const option = options.nth(i);
+        const foundText = (await option.innerText()).trim();
+
+        if (foundText === itemToSElect) {
+            await option.click();
+            return;
+        }
+    }
+
+    throw new Error(`Dropdown does not include expected item "${itemToSElect}"`);
+}
+
+async function click_Gender_RadioButton(buttonName: string): Promise<void> {
+
+    switch (buttonName) {
+        case "Male":
+            await page.locator("#male_id").click();
+            break;
+
+        case "Female":
+            await page.locator("#female_id").click();
+            break;
+
+        case "Other":
+            await page.locator("#other_id").click();
+            break;
+    }
+}
+
+async function set_TextEditor_TextBox(textToSet: string): Promise<void> {
+
+    await page.locator("input[name='firstname']").fill(textToSet);
+}
+
+async function set_LastName_TextBox(textToSet: string): Promise<void> {
+
+    //await page.locator("#lastname_id").type(textToSet);
+    //pressSequentially() добавляет/печатает текст как пользователь
+    await page.locator("#lastname_id").click();
+    await page.locator("#lastname_id").press('End');
+    await page.locator("#lastname_id").pressSequentially(textToSet);
+}
+
+async function verify_LastName_TextBox(expectedText: string): Promise<void> {
+
+    const input = page.locator('#lastname_id');
+    const foundText = await input.inputValue();
+
+    await expect(input).toHaveValue(expectedText);
+}
+
+async function verify_ReadOnlyField_TextBox(expectedText: string): Promise<void> {
+
+    const input = page.locator('#lastname_rd_id');
+    const foundText = await input.inputValue();
+
+    await expect(input).toHaveValue(expectedText);
+}
+
+async function set_ReadOnlyField_TextBox(textToSet: string): Promise<void> {
+
+    const input = page.locator('#lastname_rd_id');
+    await remove_Attribute(input, "readonly");
+    const foundText = await input.fill(textToSet);
+    await create_Attribute(input, "readonly", "readonly");
+}
+
+async function remove_Attribute(element: Locator, attributeName: string): Promise<void> {
+    await element.evaluate(
+        (el, attributeName) => {
+            el.removeAttribute(attributeName);
+        },
+        attributeName
+    );
+}
+
+async function create_Attribute(element: Locator, attributeName: string, attributeValue: string): Promise<void> {
+    await element.evaluate(
+        (el, args) => {
+            el.setAttribute(args.attributeName, args.attributeValue);
+        },
+        { attributeName, attributeValue }
+    );
+}
+
+async function set_Text_AreaText(textToSet: string): Promise<void> {
+    await page.locator('#textarea_id').fill(textToSet);
+}
+
+async function set_HaveBike_Checkbox(state: CheckBoxState): Promise<void> {
+
+    const checkbox = page.locator('#bike_id');
+
+    const isChecked = await checkbox.isChecked();
+
+    if (state === CheckBoxState.CHECKED) {
+        await checkbox.check();
+    } else {
+        await checkbox.uncheck();
+    }
+}
+
+async function click_TabMenu_Tab(tabName: string): Promise<void> {
+
+    switch (tabName) {
+        case 'Buyer':
+            await page.locator('#tab1_id').click();
+            break;
+        case 'Seller':
+            await page.locator('#tab2_id').click();
+            break;
+        default:
+            await page.locator('#tab1_id').click();
+            break;
+    }
+
+}
+
+async function printTable(): Promise<void> {
+
+    await page.locator('.usersrow').first().waitFor();
+
+    const allRows = page.locator('.usersrow');
+
+    const rowCount = await allRows.count();
+
+    for (let i = 0; i < rowCount; i++) {
+        const columns = allRows.nth(i).locator('td');
+        const columnCount = await columns.count();
+
+        for (let j = 0; j < columnCount; j++) {
+            console.log(await columns.nth(j).innerText());
+        }
+
+        console.log('\n');
+    }
+}
+
+async function verify_UserClientIP_Text(userName: string, expectedIP: string): Promise<void> {
+    try {
+        let flgFound = false;
+        let flgIpEquals = false;
+        let foundUserIP = '';
+
+        await page.locator('.usersrow').first().waitFor();
+        const rows = page.locator('.usersrow');
+        const rowCount = await rows.count();
+
+        for (let i = 0; i < rowCount; i++) {
+            const row = rows.nth(i);
+            const userNameText = await row.locator('.username').innerText();
+
+            if (userNameText === userName) {
+                foundUserIP = await row.locator('.client').innerText();
+                flgFound = true;
+                flgIpEquals = foundUserIP === expectedIP;
+                break;
+            }
+        }
+
+        if (!flgFound) {
+            throw new Error(`User ${userName} not found`);
+        }
+
+        if (!flgIpEquals) {
+            throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedIP}`);
+        }
+
+    } catch (error) {
+        throw new Error(`ERROR: ${error}`);
+    }
+}
+
+async function verify_LoginServerIP_Text(loginName: string, expectedIP: string): Promise<void> {
+    try {
+        let flgFound = false;
+        let flgIpEquals = false;
+        let foundUserIP = '';
+
+        await page.locator('.usersrow').first().waitFor();
+        const rows = page.locator("xpath=//table[@id='dable_id']//tr[@class='usersrow']");
+        const rowCount = await rows.count();
+
+        for (let i = 1; i <= rowCount; i++) {
+            const userNameElement = page.locator(`xpath=//table[@id='dable_id']//tr[@class='usersrow'][${i}]/td[2]`);
+            const userNameText = (await userNameElement.innerText()).trim();
+
+            if (userNameText.toLowerCase() === loginName.trim().toLowerCase()) {
+                flgFound = true;
+                const userIPElement = page.locator(`xpath=//table[@id='dable_id']//tr[@class='usersrow'][${i}]/td[4]`);
+                foundUserIP = await userIPElement.innerText();
+                flgIpEquals = foundUserIP.trim().toLowerCase() === expectedIP.trim().toLowerCase();
+                break;
+            }
+        }
+
+        if (!flgFound) {
+            throw new Error(`User ${loginName} not found`);
+        }
+
+        if (!flgIpEquals) {
+            throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedIP}`);
+        }
+
+    } catch (error) {
+        throw new Error(`ERROR: ${error}`);
+    }
+}
+
+
+
