@@ -1,4 +1,6 @@
 import { test, expect, type Page, Locator } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 
 enum CheckBoxState {
     CHECKED = 'checked',
@@ -62,6 +64,12 @@ test('First Test', async ({ page: testPage }) => {
     await verify_UserClientIP_Text("Thomas Hardy", "192.168.1.100");
 
     await verify_LoginServerIP_Text("John", "10.2.2.100");
+
+    await set_Password_TextBox("123456789");
+
+    //await upload_File("C:\\Users\\YuriGoncharov\\Downloads\\image.png");
+
+    await download_File_Link("C:\\Users\\YuriGoncharov\\Downloads\\PandaDownload.png");
 
 });
 
@@ -428,6 +436,48 @@ async function verify_LoginServerIP_Text(loginName: string, expectedIP: string):
         throw new Error(`ERROR: ${error}`);
     }
 }
+
+async function set_Password_TextBox(password: string): Promise<void> {
+
+    await page.locator("input[name='password']").fill(password);
+}
+
+async function upload_File(fileName: string): Promise<void> {
+
+    await page.locator('#upload_id').setInputFiles(fileName);
+    await page.locator('#upload_submit_id').click();
+}
+
+async function download_File_Link(saveAsPath: string): Promise<void> {
+
+    const doenloadLink = page.locator("//a[@download='proposed_file_name']");
+
+    const href = await doenloadLink.getAttribute('href');
+
+    if (!href) {
+        throw new Error('Link does not contain href');
+    }
+
+    const fileUrl = new URL(href, page.url()).toString();
+
+    const dir = path.dirname(saveAsPath);
+
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const response = await page.request.get(fileUrl);
+
+    if (!response.ok()) {
+        throw new Error(`Failed to get file. Status: ${response.status()}. URL: ${fileUrl}`);
+    }
+
+    fs.writeFileSync(saveAsPath, await response.body());
+}
+
+
+
+
 
 
 
