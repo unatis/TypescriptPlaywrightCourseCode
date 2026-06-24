@@ -450,15 +450,23 @@ async function upload_File(fileName: string): Promise<void> {
 
 async function download_File_Link(saveAsPath: string): Promise<void> {
 
-    const doenloadLink = page.locator("//a[@download='proposed_file_name']");
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole("link", { name: 'Download' }).click();
+    const download = await downloadPromise;
+    await download.saveAs(saveAsPath);
+}
 
-    const href = await doenloadLink.getAttribute('href');
+async function download_File_Button(saveAsPath: string): Promise<void> {
 
-    if (!href) {
-        throw new Error('Link does not contain href');
+    const downloadForm = page.locator("#download_form_id");
+
+    const downloadLink = await downloadForm.getAttribute('action');
+
+    if (!downloadLink) {
+        throw new Error('downloadLink is empty');
     }
 
-    const fileUrl = new URL(href, page.url()).toString();
+    const fileUrl = new URL(downloadLink, page.url()).toString();
 
     const dir = path.dirname(saveAsPath);
 
@@ -473,6 +481,7 @@ async function download_File_Link(saveAsPath: string): Promise<void> {
     }
 
     fs.writeFileSync(saveAsPath, await response.body());
+
 }
 
 
