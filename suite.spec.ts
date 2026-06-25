@@ -69,7 +69,13 @@ test('First Test', async ({ page: testPage }) => {
 
     //await upload_File("C:\\Users\\YuriGoncharov\\Downloads\\image.png");
 
-    await download_File_Link("C:\\Users\\YuriGoncharov\\Downloads\\PandaDownload.png");
+    //await download_File_Link("C:\\Users\\YuriGoncharov\\Downloads\\panda.png");
+
+    //await download_File_Button("C:\\Users\\YuriGoncharov\\Downloads\\panda.png");
+
+    //await click_W3Schools_Link();
+
+    await click_W3Schools_Link_ByUrl();
 
 });
 
@@ -456,35 +462,131 @@ async function download_File_Link(saveAsPath: string): Promise<void> {
     await download.saveAs(saveAsPath);
 }
 
-async function download_File_Button(saveAsPath: string): Promise<void> {
+async function download_File_Button(saveAs: string): Promise<void> {
 
-    const downloadForm = page.locator("#download_form_id");
+    const downloadForm = page.locator('#download_form_id');
 
-    const downloadLink = await downloadForm.getAttribute('action');
+    const downloadLink = await downloadForm.getAttribute("action");
 
     if (!downloadLink) {
-        throw new Error('downloadLink is empty');
+        throw new Error("download link is empty");
     }
 
-    const fileUrl = new URL(downloadLink, page.url()).toString();
+    const fileURL = new URL(downloadLink, page.url()).toString();
 
-    const dir = path.dirname(saveAsPath);
+    const dir = path.dirname(saveAs);
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
 
-    const response = await page.request.get(fileUrl);
+    const response = await page.request.get(fileURL);
 
-    if (!response.ok()) {
-        throw new Error(`Failed to get file. Status: ${response.status()}. URL: ${fileUrl}`);
+    if (!response.ok) {
+        throw new Error(`Failed to get file. Status : ${response.status} URL : ${fileURL}`);
     }
 
-    fs.writeFileSync(saveAsPath, await response.body());
+    fs.writeFileSync(saveAs, await response.body());
+}
+
+async function click_W3Schools_Link(): Promise<void> {
+
+    const w3schoolLink = page.getByRole("link", { name: 'Visit W3Schools' });
+    const tabPromise = page.waitForEvent('popup');
+    await w3schoolLink.click();
+    const w3SchoolPage = await tabPromise;
+
+    await w3SchoolPage.waitForLoadState();
+    await w3SchoolPage.locator("div[id='subtopnav'] a[title='HTML Tutorial']").click();
+    await page.bringToFront();
+    await page.getByRole('link', { name: 'This is' }).click();
+
+    await w3SchoolPage.bringToFront();
+    await w3SchoolPage.close();
+}
+
+async function click_W3Schools_Link_ByUrl(): Promise<void> {
+
+    const w3schoolLink = page.getByRole("link", { name: 'Visit W3Schools' });
+    await w3schoolLink.click();
+
+    const pages = await page.context().pages();
+
+    let w3SchoolsPage: Page | undefined;
+
+    for (const currentPage of pages) {
+        if (currentPage.url().includes("w3schools.com")) {
+            w3SchoolsPage = currentPage;
+            await w3SchoolsPage.bringToFront();
+            break;
+        }
+    }
+
+    if (!w3SchoolsPage) {
+        throw new Error("Page not found");
+    }
+
 
 }
 
+async function click_W3Schools_Then_HTML_Then_W3Schools_Again_ByTitle(): Promise<void> {
+    const firstPageLink = page.locator('a[href="http://www.w3schools.com/"]');
+    await firstPageLink.click();
+    await page.waitForTimeout(3000);
+    const pagesAfterFirstClick = page.context().pages();
+    let w3schoolsPage: Page | undefined;
+    for (const currentPage of pagesAfterFirstClick) {
+        const currentTitle = await currentPage.title();
+        if (currentTitle.includes('W3Schools')) {
+            w3schoolsPage = currentPage;
+            break;
+        }
+    }
+    if (!w3schoolsPage) {
+        throw new Error('W3Schools page was not found by title');
+    }
+    await w3schoolsPage.bringToFront();
+    await w3schoolsPage.waitForLoadState();
+    await w3schoolsPage.locator('a[href="/html/default.asp"]').first().click();
+    await page.bringToFront();
+    await firstPageLink.click();
+    await page.waitForTimeout(3000);
+    const pagesAfterSecondClick = page.context().pages();
+    let secondW3schoolsPage: Page | undefined;
+    for (let i = pagesAfterSecondClick.length - 1; i >= 0; i--) {
+        const currentPage = pagesAfterSecondClick[i];
+        const currentTitle = await currentPage.title();
+        if (currentTitle.includes('W3Schools')) {
+            secondW3schoolsPage = currentPage;
+            break;
+        }
+    }
+    if (!secondW3schoolsPage) {
+        throw new Error('Second W3Schools page was not found by title');
+    }
+    await secondW3schoolsPage.bringToFront();
+    await secondW3schoolsPage.waitForLoadState();
+}
 
+//page.once(...) — это подписка на событие только один раз.
+async function click_TryIt_Button(): Promise<void> {//Playwright создаёт объект Dialog
+    try {
+        page.once('dialog', async dialog => {
+            console.log(`Alert: ${dialog.message()} found and dismissed`);
+            await dialog.accept();
+        });
+
+        await page.locator('#tryit_id').click();
+    } catch (error) {
+        throw new Error(`ERROR: ${error}`);
+    }
+}
+
+async function click_IFrame_Link(): Promise<void> {
+    //const frame = page.locator('iframe').nth(1).contentFrame(); second one
+    const frame = page.locator('iframe').first().contentFrame();
+    await frame.getByRole('link', { name: /More information/ }).click();
+}
 
 
 
