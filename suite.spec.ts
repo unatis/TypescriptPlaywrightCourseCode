@@ -1,10 +1,18 @@
-import { test, expect, type Page, Locator } from '@playwright/test';
+import { test, expect, type Page, Locator, Download } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+
+import { PNG } from 'pngjs';
+import pixelmatch from 'pixelmatch';
 
 enum CheckBoxState {
     CHECKED = 'checked',
     UNCHECKED = 'unchecked'
+}
+
+enum Tabs {
+    BUYER,
+    SELLER
 }
 
 let page: Page;
@@ -13,9 +21,18 @@ test('First Test', async ({ page: testPage }) => {
 
     page = testPage;
 
+    await page.addInitScript(() => {
+        const originShadow = Element.prototype.attachShadow;
+        Element.prototype.attachShadow = function (init) {
+            return originShadow.call(this, {
+                ...init, mode: 'open'
+            });
+        };
+    });
+
     await page.goto('https://automationcoursewebsite.onrender.com/');
 
-    await verify_Title_Text("Test page");
+    /*await verify_Title_Text("Test page");
 
     await verify_SeleniumAutomation_Text("Selenium automation");
 
@@ -49,23 +66,27 @@ test('First Test', async ({ page: testPage }) => {
 
     await verify_LastName_TextBox("LastnameDell");
 
-    await verify_ReadOnlyField_TextBox("readonly");
+    await verify_ReadOnly_TextBox("readonly");
 
-    await set_ReadOnlyField_TextBox("Hello");
+    await set_ReadOnly_TextBox("Hello");
 
-    await set_Text_AreaText("Hello");
+    await set_Text_TextArea("Hello");
+
+    await verify_Text_TextArea("Hello");
 
     await set_HaveBike_Checkbox(CheckBoxState.CHECKED);
 
-    await click_TabMenu_Tab("Seller");
+    await set_HaveCar_Checkbox(CheckBoxState.UNCHECKED);
 
-    await printTable();
+    await click_TabMenu_Tab(Tabs.SELLER);
 
-    await verify_UserClientIP_Text("Thomas Hardy", "192.168.1.100");
+    await print_Table();*/
 
-    await verify_LoginServerIP_Text("John", "10.2.2.100");
+    //await verify_UserClientIP_Table("Thomas Hardy", "192.168.1.30");
 
-    await set_Password_TextBox("123456789");
+    //await verify_LoginServerIP_Table("John", "10.2.2.100");
+
+    //await set_Password_Textbox("123456");
 
     //await upload_File("C:\\Users\\YuriGoncharov\\Downloads\\image.png");
 
@@ -75,8 +96,45 @@ test('First Test', async ({ page: testPage }) => {
 
     //await click_W3Schools_Link();
 
-    await click_W3Schools_Link_ByUrl();
+    //await click_W3Schools_Link_ByUrl();
 
+    //await click_MoreInformation_Link();
+
+    //await click_TryIt_Button();
+
+    //await verify_Dynamic_Element();
+
+    //await verify_Dynamic_Element_2();
+
+    //await click_Star_Icon();
+
+    //await verify_Chart_Canvas();
+
+    //await verify_Chart_Canvas_2();
+
+    //await click_Play_Video();
+
+    //await verify_IsPlaying_Video();
+
+    //await click_Pause_Video();
+
+    //await verify_CanPlayAndPause_Video();
+
+    //await verify_CanPlayAndPause_Audio();
+
+    //await click_YouTube_Video();
+
+    //await move_Text_DragAndDrop();
+
+    //await mouseMove();
+
+    //await click_PageScrollButton_Button();
+
+    //await click_ContainerScrollButton_Button();
+
+    //await click_OpenShadowDom_Button();
+
+    await click_ClosedShadowDom_Button();
 });
 
 async function verify_Title_Text(expectedText: string): Promise<void> {
@@ -272,60 +330,70 @@ async function set_LastName_TextBox(textToSet: string): Promise<void> {
 
     //await page.locator("#lastname_id").type(textToSet);
     //pressSequentially() добавляет/печатает текст как пользователь
-    await page.locator("#lastname_id").click();
-    await page.locator("#lastname_id").press('End');
-    await page.locator("#lastname_id").pressSequentially(textToSet);
+    const textBox = page.locator("#lastname_id");
+    await textBox.click();
+    await textBox.press('End');
+    await textBox.pressSequentially(textToSet);
 }
 
 async function verify_LastName_TextBox(expectedText: string): Promise<void> {
 
-    const input = page.locator('#lastname_id');
-    const foundText = await input.inputValue();
+    const textBox = page.locator("#lastname_id");
+    //const foundText = await textBox.inputValue();
 
-    await expect(input).toHaveValue(expectedText);
+    await expect(textBox).toHaveValue(expectedText);
 }
 
-async function verify_ReadOnlyField_TextBox(expectedText: string): Promise<void> {
+async function verify_ReadOnly_TextBox(expectedText: string): Promise<void> {
 
-    const input = page.locator('#lastname_rd_id');
-    const foundText = await input.inputValue();
+    const textBox = page.locator("#lastname_rd_id");
+    const foundText = await textBox.inputValue();
 
-    await expect(input).toHaveValue(expectedText);
-}
-
-async function set_ReadOnlyField_TextBox(textToSet: string): Promise<void> {
-
-    const input = page.locator('#lastname_rd_id');
-    await remove_Attribute(input, "readonly");
-    const foundText = await input.fill(textToSet);
-    await create_Attribute(input, "readonly", "readonly");
+    await expect(textBox).toHaveValue(expectedText);
 }
 
 async function remove_Attribute(element: Locator, attributeName: string): Promise<void> {
+
     await element.evaluate(
         (el, attributeName) => {
             el.removeAttribute(attributeName);
-        },
-        attributeName
+        }, attributeName
     );
 }
 
 async function create_Attribute(element: Locator, attributeName: string, attributeValue: string): Promise<void> {
+
     await element.evaluate(
         (el, args) => {
             el.setAttribute(args.attributeName, args.attributeValue);
-        },
-        { attributeName, attributeValue }
+        }, { attributeName, attributeValue }
     );
 }
 
-async function set_Text_AreaText(textToSet: string): Promise<void> {
-    await page.locator('#textarea_id').fill(textToSet);
+async function set_ReadOnly_TextBox(textToSet: string): Promise<void> {
+
+    const textBox = page.locator("#lastname_rd_id");
+    await remove_Attribute(textBox, "readonly");
+    const foundText = await textBox.fill(textToSet);
+    await create_Attribute(textBox, "readonly", "readonly");
+}
+
+async function set_Text_TextArea(textToSet: string): Promise<void> {
+
+    const textArea = page.locator("#textarea_id");
+    await textArea.fill(textToSet);
+}
+
+async function verify_Text_TextArea(expectedText: string): Promise<void> {
+
+    const textArea = page.locator("#textarea_id");
+    //const foundText = await textArea.inputValue();
+    await expect(textArea).toHaveValue(expectedText);
 }
 
 async function set_HaveBike_Checkbox(state: CheckBoxState): Promise<void> {
 
-    const checkbox = page.locator('#bike_id');
+    const checkbox = page.locator("#bike_id");
 
     const isChecked = await checkbox.isChecked();
 
@@ -336,31 +404,39 @@ async function set_HaveBike_Checkbox(state: CheckBoxState): Promise<void> {
     }
 }
 
-async function click_TabMenu_Tab(tabName: string): Promise<void> {
+async function set_HaveCar_Checkbox(state: CheckBoxState): Promise<void> {
 
-    switch (tabName) {
-        case 'Buyer':
-            await page.locator('#tab1_id').click();
-            break;
-        case 'Seller':
-            await page.locator('#tab2_id').click();
-            break;
-        default:
-            await page.locator('#tab1_id').click();
-            break;
+    const checkbox = page.locator("#car_id");
+
+    if (state === CheckBoxState.CHECKED) {
+        await checkbox.check();
+    } else {
+        await checkbox.uncheck();
     }
-
 }
 
-async function printTable(): Promise<void> {
+async function click_TabMenu_Tab(tabName: Tabs): Promise<void> {
 
-    await page.locator('.usersrow').first().waitFor();
+    switch (tabName) {
+        case Tabs.BUYER:
+            await page.locator("#tab1_id").click();
+            break;
+        case Tabs.SELLER:
+            await page.locator("#tab2_id").click();
+            break;
+    }
+}
 
-    const allRows = page.locator('.usersrow');
+async function print_Table(): Promise<void> {
+
+    await page.locator(".usersrow").first().waitFor();
+
+    const allRows = page.locator(".usersrow");
 
     const rowCount = await allRows.count();
 
     for (let i = 0; i < rowCount; i++) {
+
         const columns = allRows.nth(i).locator('td');
         const columnCount = await columns.count();
 
@@ -368,98 +444,103 @@ async function printTable(): Promise<void> {
             console.log(await columns.nth(j).innerText());
         }
 
-        console.log('\n');
+        console.log("\n");
     }
 }
 
-async function verify_UserClientIP_Text(userName: string, expectedIP: string): Promise<void> {
-    try {
-        let flgFound = false;
-        let flgIpEquals = false;
-        let foundUserIP = '';
+async function verify_UserClientIP_Table(userName: string, expectedIP: string): Promise<void> {
 
-        await page.locator('.usersrow').first().waitFor();
-        const rows = page.locator('.usersrow');
-        const rowCount = await rows.count();
+    let flgFound: boolean = false;
+    let foundUserIP: string = "";
+    let flgIpEquals: boolean = false;
 
-        for (let i = 0; i < rowCount; i++) {
-            const row = rows.nth(i);
-            const userNameText = await row.locator('.username').innerText();
+    await page.locator(".usersrow").first().waitFor();
+    const allRows = page.locator(".usersrow");
+    const rowCount = await allRows.count();
 
-            if (userNameText === userName) {
-                foundUserIP = await row.locator('.client').innerText();
-                flgFound = true;
-                flgIpEquals = foundUserIP === expectedIP;
-                break;
-            }
+    for (let i = 0; i < rowCount; i++) {
+        const row = allRows.nth(i);
+        const userNameFound = await row.locator(".username").innerText();
+
+        if (userNameFound === userName) {
+            flgFound = true;
+            foundUserIP = await row.locator(".client").innerText();
+            flgIpEquals = foundUserIP === expectedIP;
+            break;
         }
+    }
 
-        if (!flgFound) {
-            throw new Error(`User ${userName} not found`);
-        }
+    if (!flgFound) {
+        throw new Error(`User ${userName} not found in the table`);
+    }
 
-        if (!flgIpEquals) {
-            throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedIP}`);
-        }
-
-    } catch (error) {
-        throw new Error(`ERROR: ${error}`);
+    if (!flgIpEquals) {
+        throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedIP}`);
     }
 }
 
-async function verify_LoginServerIP_Text(loginName: string, expectedIP: string): Promise<void> {
-    try {
-        let flgFound = false;
-        let flgIpEquals = false;
-        let foundUserIP = '';
+async function verify_LoginServerIP_Table(loginName: string, expectedServerIP: string): Promise<void> {
 
-        await page.locator('.usersrow').first().waitFor();
-        const rows = page.locator("xpath=//table[@id='dable_id']//tr[@class='usersrow']");
-        const rowCount = await rows.count();
+    let flgFound: boolean = false;
+    let foundUserIP: string = "";
+    let flgIpEquals: boolean = false;
+    let columIndex: number = 0;
 
-        for (let i = 1; i <= rowCount; i++) {
-            const userNameElement = page.locator(`xpath=//table[@id='dable_id']//tr[@class='usersrow'][${i}]/td[2]`);
-            const userNameText = (await userNameElement.innerText()).trim();
+    await page.locator(".usersrow").first().waitFor();
 
-            if (userNameText.toLowerCase() === loginName.trim().toLowerCase()) {
-                flgFound = true;
-                const userIPElement = page.locator(`xpath=//table[@id='dable_id']//tr[@class='usersrow'][${i}]/td[4]`);
-                foundUserIP = await userIPElement.innerText();
-                flgIpEquals = foundUserIP.trim().toLowerCase() === expectedIP.trim().toLowerCase();
-                break;
-            }
+    const allTitles = page.locator("//table[@id='dable_id']//tr[@class='userstitle']/th");
+    const titleCount = await allTitles.count();
+
+    for (let i = 0; i < titleCount; i++) {
+        const title = await allTitles.nth(i).innerText();
+
+        if (title === "Login") {
+            columIndex = i + 1;
+            break;
         }
+    }
 
-        if (!flgFound) {
-            throw new Error(`User ${loginName} not found`);
+    const allRows = page.locator("//table[@id='dable_id']//tr[@class='usersrow']");
+    const rowCount = await allRows.count();
+
+    for (let i = 0; i < rowCount; i++) {
+        const row = allRows.nth(i);
+        const loginNameFound = await row.locator(`//td[${columIndex}]`).innerText();
+
+        if (loginNameFound === loginName) {
+            flgFound = true;
+            foundUserIP = await row.locator(`//td[${columIndex}]`).innerText();
+            flgIpEquals = foundUserIP === expectedServerIP;
+            break;
         }
+    }
 
-        if (!flgIpEquals) {
-            throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedIP}`);
-        }
+    if (!flgFound) {
+        throw new Error(`User ${loginName} not found in the table`);
+    }
 
-    } catch (error) {
-        throw new Error(`ERROR: ${error}`);
+    if (!flgIpEquals) {
+        throw new Error(`Found user IP ${foundUserIP} not equals to expected ${expectedServerIP}`);
     }
 }
 
-async function set_Password_TextBox(password: string): Promise<void> {
+async function set_Password_Textbox(password: string): Promise<void> {
 
     await page.locator("input[name='password']").fill(password);
 }
 
 async function upload_File(fileName: string): Promise<void> {
 
-    await page.locator('#upload_id').setInputFiles(fileName);
-    await page.locator('#upload_submit_id').click();
+    await page.locator("#upload_id").setInputFiles(fileName);
+    await page.locator("#upload_submit_id").click();
 }
 
-async function download_File_Link(saveAsPath: string): Promise<void> {
+async function download_File_Link(saveAs: string): Promise<void> {
 
-    const downloadPromise = page.waitForEvent('download');
+    const downloadPromice = page.waitForEvent('download');
     await page.getByRole("link", { name: 'Download' }).click();
-    const download = await downloadPromise;
-    await download.saveAs(saveAsPath);
+    const download: Download = await downloadPromice;
+    await download.saveAs(saveAs);
 }
 
 async function download_File_Button(saveAs: string): Promise<void> {
@@ -507,88 +588,297 @@ async function click_W3Schools_Link(): Promise<void> {
 
 async function click_W3Schools_Link_ByUrl(): Promise<void> {
 
+    const context = page.context();
+
+    const openedPages: Page[] = [];
+
+    context.on('page', async (newPage) => {
+        openedPages.push(newPage);
+        await newPage.waitForLoadState();
+    });
+
     const w3schoolLink = page.getByRole("link", { name: 'Visit W3Schools' });
+
     await w3schoolLink.click();
 
-    const pages = await page.context().pages();
+    await page.waitForTimeout(3000);
+
+    const allPages = context.pages();
+
+    console.log(`All pages count: ${allPages.length}`);
+    console.log(`Opened pages count: ${openedPages.length}`);
+
+    for (const currentPage of allPages) {
+        console.log(`Page URL: ${currentPage.url()}`);
+    }
 
     let w3SchoolsPage: Page | undefined;
 
-    for (const currentPage of pages) {
-        if (currentPage.url().includes("w3schools.com")) {
+    for (const currentPage of allPages) {
+        if (currentPage.url().includes("w3schools.com")) {//.title()
             w3SchoolsPage = currentPage;
-            await w3SchoolsPage.bringToFront();
             break;
         }
     }
-
     if (!w3SchoolsPage) {
         throw new Error("Page not found");
     }
-
-
+    await w3SchoolsPage.bringToFront();
 }
 
-async function click_W3Schools_Then_HTML_Then_W3Schools_Again_ByTitle(): Promise<void> {
-    const firstPageLink = page.locator('a[href="http://www.w3schools.com/"]');
-    await firstPageLink.click();
-    await page.waitForTimeout(3000);
-    const pagesAfterFirstClick = page.context().pages();
-    let w3schoolsPage: Page | undefined;
-    for (const currentPage of pagesAfterFirstClick) {
-        const currentTitle = await currentPage.title();
-        if (currentTitle.includes('W3Schools')) {
-            w3schoolsPage = currentPage;
-            break;
-        }
-    }
-    if (!w3schoolsPage) {
-        throw new Error('W3Schools page was not found by title');
-    }
-    await w3schoolsPage.bringToFront();
-    await w3schoolsPage.waitForLoadState();
-    await w3schoolsPage.locator('a[href="/html/default.asp"]').first().click();
-    await page.bringToFront();
-    await firstPageLink.click();
-    await page.waitForTimeout(3000);
-    const pagesAfterSecondClick = page.context().pages();
-    let secondW3schoolsPage: Page | undefined;
-    for (let i = pagesAfterSecondClick.length - 1; i >= 0; i--) {
-        const currentPage = pagesAfterSecondClick[i];
-        const currentTitle = await currentPage.title();
-        if (currentTitle.includes('W3Schools')) {
-            secondW3schoolsPage = currentPage;
-            break;
-        }
-    }
-    if (!secondW3schoolsPage) {
-        throw new Error('Second W3Schools page was not found by title');
-    }
-    await secondW3schoolsPage.bringToFront();
-    await secondW3schoolsPage.waitForLoadState();
-}
+async function click_MoreInformation_Link(): Promise<void> {
 
-//page.once(...) — это подписка на событие только один раз.
-async function click_TryIt_Button(): Promise<void> {//Playwright создаёт объект Dialog
-    try {
-        page.once('dialog', async dialog => {
-            console.log(`Alert: ${dialog.message()} found and dismissed`);
-            await dialog.accept();
-        });
-
-        await page.locator('#tryit_id').click();
-    } catch (error) {
-        throw new Error(`ERROR: ${error}`);
-    }
-}
-
-async function click_IFrame_Link(): Promise<void> {
-    //const frame = page.locator('iframe').nth(1).contentFrame(); second one
-    const frame = page.locator('iframe').first().contentFrame();
+    const frame = page.locator("//iframe[1]").contentFrame();
+    //const frame = page.locator("iframe").first().contentFrame();
     await frame.getByRole('link', { name: /More information/ }).click();
+
 }
 
+async function click_TryIt_Button(): Promise<void> {
 
+    page.once('dialog', async (dialog) => {
+        console.log(dialog.message());
 
+        await page.waitForTimeout(3000);
 
+        await dialog.accept();
+    });
 
+    await page.locator("#tryit_id").click();
+
+}
+
+async function verify_Dynamic_Element(): Promise<void> {
+
+    //await page.locator("#ajax_button_id").click();
+    //await expect(page.locator("#ajax_id h2")).toHaveText('Dynamic content loaded', { timeout: 12000 });
+
+    const textBlock = page.locator("#ajax_id").locator("h2");
+    const oldText = await textBlock.innerText();
+    await page.locator("#ajax_button_id").click();
+    await expect(textBlock).not.toHaveText(oldText, { timeout: 12000 });
+}
+
+async function verify_Dynamic_Element_2(): Promise<void> {
+
+    let flgFound: boolean = false;
+
+    const textBlock = page.locator("#ajax_id").locator("h2");
+
+    await create_Attribute(textBlock, "await", "");
+
+    await page.locator("#ajax_button_id").click();
+
+    for (let i = 0; i < 10; i++) {
+
+        const awaitAttribute = await textBlock.getAttribute("await");
+
+        if (awaitAttribute === null) {
+            flgFound = true;
+            break;
+        }
+
+        await page.waitForTimeout(1000);
+    }
+
+    const foundText = await textBlock.innerText();
+
+    if (!flgFound) {
+        throw new Error("Text was not changed" + foundText);
+    }
+}
+
+async function click_Star_Icon(): Promise<void> {
+
+    await page.locator("div.star svg").click();
+
+}
+
+async function verify_Chart_Canvas(): Promise<void> {
+
+    const canvas = page.locator("#myChart");
+
+    //await canvas.screenshot({ path: 'screenshots/salesChart.png' });
+
+    await expect(canvas).toHaveScreenshot('canvas.png', { maxDiffPixelRatio: 0.01 });
+
+}
+
+async function verify_Chart_Canvas_2(): Promise<void> {
+
+    const canvas = page.locator("#myChart");
+    const screenPath = "screenshots/salesChart.png";
+    const actualBuffer = await canvas.screenshot();
+
+    if (!fs.existsSync('screenshots')) {
+        fs.mkdirSync('screenshots');
+    }
+
+    if (!fs.existsSync(screenPath)) {
+        fs.writeFileSync(screenPath, actualBuffer);
+    }
+
+    const expectedBuffer = fs.readFileSync(screenPath);
+    const actualPng = PNG.sync.read(actualBuffer);
+    const expectedPng = PNG.sync.read(expectedBuffer);
+
+    if (actualPng.width !== expectedPng.width || actualPng.height !== expectedPng.height) {
+        throw new Error("Images have different size");
+    }
+
+    const diffPexels = pixelmatch(
+        actualPng.data,
+        expectedPng.data,
+        undefined,
+        actualPng.width,
+        actualPng.height,
+        {
+            threshold: 0.2//pixel color diff
+        }
+    );
+
+    const totalPixels = actualPng.width * actualPng.height;
+
+    const diffRatio = diffPexels / totalPixels;//
+
+    if (diffRatio > 0.01) {
+        throw new Error("Images have different size" + diffRatio);
+    }
+
+    console.log("Images matched");
+}
+
+async function click_Play_Video(): Promise<void> {
+
+    const video = page.locator("//div/video/source[@src='file_example_MP4_480_1_5MG.mp4']/..");
+
+    await video.evaluate((el) => { return (el as HTMLVideoElement).play(); });
+
+}
+
+async function click_Pause_Video(): Promise<void> {
+
+    const video = page.locator("//div/video/source[@src='file_example_MP4_480_1_5MG.mp4']/..");
+
+    await video.evaluate((el) => { return (el as HTMLVideoElement).pause(); });
+}
+
+async function verify_IsPlaying_Video(): Promise<void> {
+
+    const video = page.locator("//div/video/source[@src='file_example_MP4_480_1_5MG.mp4']/..");
+
+    const isPaused = await video.evaluate((el) => { return (el as HTMLVideoElement).paused; });
+
+    if (isPaused) {
+        throw new Error("Video is paused");
+    }
+}
+
+async function verify_CanPlayAndPause_Video(): Promise<void> {
+
+    const video = page.locator("//div/video/source[@src='file_example_MP4_480_1_5MG.mp4']/..");
+
+    await video.evaluate((el) => {
+        const videoElement = el as HTMLVideoElement;
+        videoElement.muted = false;
+        return videoElement.play();
+    });
+
+    await page.waitForTimeout(1000);
+
+    const isPlaying = await video.evaluate((el) => {
+        const videoElement = el as HTMLVideoElement;
+        return !videoElement.paused && videoElement.currentTime > 0;
+    });
+
+    if (!isPlaying) {
+        throw new Error("Video did not start playing");
+    }
+}
+
+async function verify_CanPlayAndPause_Audio(): Promise<void> {
+
+    const audio = page.locator("//div/audio/source[contains(@src,'file_example_MP3_700KB')]/..");
+
+    await audio.evaluate((el) => {
+        const audioElement = el as HTMLAudioElement;
+        audioElement.muted = false;
+        return audioElement.play();
+    });
+
+    await page.waitForTimeout(1000);
+
+    const isPlaying = await audio.evaluate((el) => {
+        const audioElement = el as HTMLAudioElement;
+        return !audioElement.paused && audioElement.currentTime > 0;
+    });
+
+    if (!isPlaying) {
+        throw new Error("Audio did not start playing");
+    }
+
+    await audio.evaluate((el) => {
+        (el as HTMLAudioElement).pause();
+    });
+
+    const isPaused = await audio.evaluate((el) => {
+        return (el as HTMLAudioElement).paused;
+    });
+
+    if (!isPaused) {
+        throw new Error("Audio did not paused");
+    }
+}
+
+async function click_YouTube_Video(): Promise<void> {
+
+    const frame = page.locator("//iframe[contains(@src,'youtube')]").contentFrame();
+    const button = frame.locator("button.ytmCuedOverlayPlayButton");
+    await button.click();
+}
+
+async function move_Text_DragAndDrop(): Promise<void> {
+
+    const source = page.locator("//h1[@id='h1']");
+    const target = page.locator("//div[@id='div1']");
+
+    await source.dragTo(target);
+    await expect(target.locator("//h1[@id='h1']")).toHaveText("W3Schools.com");
+}
+
+async function mouseMove(): Promise<void> {
+
+    await page.locator("#tab2_id").hover();
+
+}
+
+async function click_PageScrollButton_Button(): Promise<void> {
+
+    const button = page.locator("#page_scroll_button");
+    await button.scrollIntoViewIfNeeded();
+    await button.click();
+
+}
+
+async function click_ContainerScrollButton_Button(): Promise<void> {
+
+    const container = page.locator("#scroll_container");
+
+    await container.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+        el.scrollLeft = el.scrollWidth;
+    });
+
+    await page.locator("#container_scroll_button").click();
+
+}
+
+async function click_OpenShadowDom_Button(): Promise<void> {
+
+    await page.locator("#open_shadow_button").click();
+}
+
+async function click_ClosedShadowDom_Button(): Promise<void> {
+
+    await page.locator("#closed_shadow_button").click();
+}
